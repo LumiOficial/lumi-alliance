@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumi Alliance — Cadastro de Afiliado</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;font-family:'Sora',sans-serif;background:#f9fafb;color:#111827;}
+.page{min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.top-bar{background:#fff;border-bottom:1px solid rgba(0,0,0,0.08);padding:1rem 1.5rem;display:flex;align-items:center;gap:12px;}
+.top-logo{font-size:18px;font-weight:700;color:#111;}
+.top-logo span{font-weight:300;color:#6b7280;}
+.top-badge{font-size:11px;padding:3px 10px;border-radius:20px;background:#f3f4f6;color:#374151;font-weight:500;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#111 0%,#374151 100%);color:#fff;padding:3rem 1.5rem 2.5rem;text-align:center;}
+.hero-recruiter{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1.25rem;}
+.recruiter-avatar{width:48px;height:48px;border-radius:50%;background:#374151;border:2px solid rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;}
+.recruiter-avatar img{width:100%;height:100%;object-fit:cover;}
+.recruiter-info{text-align:left;}
+.recruiter-name{font-size:14px;font-weight:600;color:#fff;}
+.recruiter-label{font-size:11px;color:rgba(255,255,255,0.6);}
+.hero h1{font-size:26px;font-weight:700;margin-bottom:.75rem;line-height:1.3;}
+.hero h1 span{color:#fbbf24;}
+.hero-sub{font-size:14px;color:rgba(255,255,255,0.75);max-width:460px;margin:0 auto 1.5rem;line-height:1.6;}
+.hero-perks{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;}
+.perk{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.8);}
+.perk-icon{font-size:16px;}
+
+/* MAIN */
+.main-content{flex:1;max-width:500px;margin:0 auto;padding:2rem 1.5rem;width:100%;}
+
+/* COMMISSIONS DISPLAY */
+.comm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:2rem;}
+.comm-card{border-radius:10px;padding:.875rem .75rem;text-align:center;}
+.comm-card.white{background:#f9fafb;border:1px solid #e5e7eb;}
+.comm-card.blue{background:#e8f4fd;border:1px solid #7dd3fc;}
+.comm-card.gold{background:#fef3c7;border:1px solid #fcd34d;}
+.comm-card.black{background:#111827;border:1px solid #374151;}
+.comm-level{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;}
+.comm-card.white .comm-level{color:#374151;}.comm-card.blue .comm-level{color:#0369a1;}.comm-card.gold .comm-level{color:#92400e;}.comm-card.black .comm-level{color:#9ca3af;}
+.comm-pct{font-size:20px;font-weight:700;}
+.comm-card.white .comm-pct{color:#111;}.comm-card.blue .comm-pct{color:#0369a1;}.comm-card.gold .comm-pct{color:#b45309;}.comm-card.black .comm-pct{color:#e5e7eb;}
+
+/* FORM */
+.form-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:1.75rem;}
+.form-title{font-size:16px;font-weight:600;color:#111;margin-bottom:4px;}
+.form-sub{font-size:12px;color:#6b7280;margin-bottom:1.5rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:12px;color:#374151;margin-bottom:5px;font-weight:500;}
+.field input{width:100%;background:#f9fafb;border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:11px 12px;color:#111;font-family:'Sora',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.field input:focus{border-color:#111;box-shadow:0 0 0 3px rgba(0,0,0,0.06);}
+.fields-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.recruiter-box{background:#f9fafb;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.recruiter-box-avatar{width:28px;height:28px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#374151;overflow:hidden;flex-shrink:0;}
+.recruiter-box-avatar img{width:100%;height:100%;object-fit:cover;}
+.recruiter-box-text{font-size:12px;color:#374151;}
+.recruiter-box-name{font-weight:600;color:#111;}
+.btn-register{width:100%;padding:13px;background:#111;color:#fff;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s;margin-top:.5rem;}
+.btn-register:hover{opacity:.85;}.btn-register:disabled{opacity:.5;cursor:not-allowed;}
+.err-box{background:#fee2e2;color:#991b1b;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:1rem;display:none;}
+.suc-box{background:#dcfce7;color:#166534;font-size:12px;padding:12px;border-radius:8px;margin-bottom:1rem;display:none;text-align:center;line-height:1.6;}
+.terms{font-size:11px;color:#9ca3af;text-align:center;margin-top:.875rem;line-height:1.5;}
+
+/* FOOTER */
+.footer{text-align:center;padding:1.5rem;font-size:12px;color:#9ca3af;}
+.footer a{color:#374151;font-weight:500;text-decoration:none;}
+
+/* ALREADY HAVE ACCOUNT */
+.login-link{text-align:center;font-size:12px;color:#6b7280;margin-top:1rem;}
+.login-link a{color:#111;font-weight:600;cursor:pointer;}
+
+@media(max-width:480px){
+  .comm-grid{grid-template-columns:repeat(2,1fr);}
+  .fields-row{grid-template-columns:1fr;}
+  .hero h1{font-size:22px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="top-bar">
+    <div class="top-logo">Lumi <span>Alliance</span></div>
+    <div class="top-badge">Programa de Afiliados</div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-recruiter" id="recruiter-section" style="display:none">
+      <div class="recruiter-avatar" id="recruiter-avatar"></div>
+      <div class="recruiter-info">
+        <div class="recruiter-name" id="recruiter-name">Carregando...</div>
+        <div class="recruiter-label">convidou você para a Lumi Alliance</div>
+      </div>
+    </div>
+    <h1>Ganhe comissões vendendo <span>IA para todo Brasil</span></h1>
+    <div class="hero-sub">Junte-se à rede de afiliados da Lumi AI e ganhe comissões recorrentes indicando a plataforma de inteligência artificial mais completa do Brasil.</div>
+    <div class="hero-perks">
+      <div class="perk"><span class="perk-icon">💰</span> Comissões de até 20%</div>
+      <div class="perk"><span class="perk-icon">📈</span> Plano de carreira com 4 níveis</div>
+      <div class="perk"><span class="perk-icon">🤝</span> Bônus por indicações</div>
+      <div class="perk"><span class="perk-icon">📊</span> Dashboard em tempo real</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- COMMISSIONS -->
+    <div class="comm-grid">
+      <div class="comm-card white"><div class="comm-level">White</div><div class="comm-pct">10%</div></div>
+      <div class="comm-card blue"><div class="comm-level">Blue</div><div class="comm-pct">12%</div></div>
+      <div class="comm-card gold"><div class="comm-level">Gold</div><div class="comm-pct">15%</div></div>
+      <div class="comm-card black"><div class="comm-level">Black</div><div class="comm-pct">20%</div></div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-card">
+      <div class="form-title">Criar sua conta de afiliado</div>
+      <div class="form-sub">Preencha os dados abaixo para começar a ganhar comissões</div>
+
+      <div id="err-box" class="err-box"></div>
+      <div id="suc-box" class="suc-box"></div>
+
+      <div id="recruiter-box" style="display:none">
+        <div class="recruiter-box">
+          <div class="recruiter-box-avatar" id="rb-avatar"></div>
+          <div class="recruiter-box-text">Indicado por <span class="recruiter-box-name" id="rb-name"></span></div>
+        </div>
+      </div>
+
+      <div id="form-fields">
+        <div class="fields-row">
+          <div class="field"><label>Nome completo</label><input type="text" id="r-name" placeholder="João Silva"></div>
+          <div class="field"><label>Telefone</label><input type="tel" id="r-phone" placeholder="(11) 99999-9999"></div>
+        </div>
+        <div class="field"><label>E-mail</label><input type="email" id="r-email" placeholder="seu@email.com"></div>
+        <div class="fields-row">
+          <div class="field"><label>Senha</label><input type="password" id="r-pass" placeholder="Mín. 6 caracteres"></div>
+          <div class="field"><label>Confirmar senha</label><input type="password" id="r-pass2" placeholder="Repita a senha"></div>
+        </div>
+        <button class="btn-register" id="r-btn" onclick="doRegister()">Criar conta e começar</button>
+        <div class="terms">Ao criar sua conta você concorda com os termos do programa de afiliados Lumi Alliance.</div>
+      </div>
+
+      <div class="login-link">Já tem conta? <a onclick="goToLogin()">Acessar painel →</a></div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    © 2026 Lumi AI · <a href="https://lumialliance.applumi.com.br">Acessar painel de afiliados</a>
+  </div>
+
+</div>
+
+<script>
+const {createClient}=supabase;
+const sb=createClient('https://utczzurxnaaqccbxsqyh.supabase.co','sb_publishable_897pPuNE6hnLRb8LVyHifw_zmXUcDga');
+
+let recruiterData=null;
+let recruiterSlug='';
+
+async function init(){
+  // Get recruiter from URL param
+  const params=new URLSearchParams(window.location.search);
+  const ref=params.get('recruiter')||params.get('ref');
+  if(ref){
+    recruiterSlug=ref;
+    await loadRecruiter(ref);
+  }
+}
+
+async function loadRecruiter(slug){
+  // Find affiliate by email prefix (slug)
+  const {data}=await sb.from('affiliates')
+    .select('id,full_name,avatar_url,affiliate_levels(current_level)')
+    .ilike('email',slug+'@%')
+    .single();
+
+  if(!data){
+    // Try exact slug match if email lookup fails
+    return;
+  }
+  recruiterData=data;
+
+  // Show recruiter in hero
+  const heroSection=document.getElementById('recruiter-section');
+  heroSection.style.display='flex';
+  const heroAvatar=document.getElementById('recruiter-avatar');
+  const name=data.full_name||'Afiliado';
+  const ini=name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+  heroAvatar.innerHTML=data.avatar_url?`<img src="${data.avatar_url}" alt="">`  :ini;
+  document.getElementById('recruiter-name').textContent=name;
+
+  // Show in form
+  document.getElementById('recruiter-box').style.display='block';
+  const rbAvatar=document.getElementById('rb-avatar');
+  rbAvatar.innerHTML=data.avatar_url?`<img src="${data.avatar_url}" alt="">`:ini;
+  document.getElementById('rb-name').textContent=name;
+}
+
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const phone=document.getElementById('r-phone').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const pass2=document.getElementById('r-pass2').value;
+  const errEl=document.getElementById('err-box');
+  const sucEl=document.getElementById('suc-box');
+  const btn=document.getElementById('r-btn');
+
+  errEl.style.display='none';
+  sucEl.style.display='none';
+
+  if(!name||!email||!pass){errEl.textContent='Preencha todos os campos obrigatórios.';errEl.style.display='block';return;}
+  if(pass!==pass2){errEl.textContent='As senhas não coincidem.';errEl.style.display='block';return;}
+  if(pass.length<6){errEl.textContent='A senha deve ter no mínimo 6 caracteres.';errEl.style.display='block';return;}
+
+  btn.disabled=true;btn.textContent='Criando sua conta...';
+
+  // Register in Supabase Auth
+  const {data:authData,error:authErr}=await sb.auth.signUp({
+    email,
+    password:pass,
+    options:{data:{full_name:name,phone}}
+  });
+
+  if(authErr){
+    errEl.textContent=authErr.message==='User already registered'
+      ?'Este e-mail já está cadastrado. Acesse o painel para fazer login.'
+      :authErr.message;
+    errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Criar conta e começar';
+    return;
+  }
+
+  // If recruiter found, link after a short wait for trigger to run
+  if(recruiterData&&authData?.user){
+    setTimeout(async()=>{
+      await sb.from('affiliates')
+        .update({recruiter_id:recruiterData.id})
+        .eq('id',authData.user.id);
+    },1500);
+  }
+
+  // Show success
+  document.getElementById('form-fields').style.display='none';
+  sucEl.innerHTML=`
+    <div style="font-size:24px;margin-bottom:8px">🎉</div>
+    <div style="font-size:15px;font-weight:600;color:#166534;margin-bottom:6px">Conta criada com sucesso!</div>
+    <div style="font-size:13px;color:#166534">Acesse o painel de afiliados para começar a divulgar e acompanhar suas comissões.</div>
+    <a href="https://lumialliance.applumi.com.br" style="display:inline-block;margin-top:14px;padding:10px 24px;background:#166534;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">Acessar o painel →</a>
+  `;
+  sucEl.style.display='block';
+}
+
+function goToLogin(){
+  window.location.href='https://lumialliance.applumi.com.br';
+}
+
+init();
+</script>
+</body>
+</html>
