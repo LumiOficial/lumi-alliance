@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumi Alliance</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ---- LEVEL THEMES ---- */
+:root{
+  --accent:#111;--accent-soft:#e5e7eb;
+  --bg:#f9fafb;--bg2:#ffffff;--bg3:#f3f4f6;
+  --text:#111827;--text2:#6b7280;--text3:#374151;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --star-on:#111;--star-off:#d1d5db;
+  --badge-bg:#f3f4f6;--sidebar-hl:#f3f4f6;
+  --btn-bg:#111;--btn-text:#fff;
+  --transition:.55s cubic-bezier(.4,0,.2,1);
+}
+.level-white{
+  --accent:#111;--accent-soft:#e5e7eb;
+  --bg:#f9fafb;--bg2:#fff;--bg3:#f3f4f6;
+  --text:#111827;--text2:#6b7280;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --star-on:#111;--star-off:#d1d5db;
+  --badge-bg:#f3f4f6;--sidebar-hl:#f3f4f6;
+  --btn-bg:#111;--btn-text:#fff;
+}
+.level-blue{
+  --accent:#0ea5e9;--accent-soft:#e0f2fe;
+  --bg:#f0f9ff;--bg2:#fff;--bg3:#e0f2fe;
+  --text:#0c4a6e;--text2:#0369a1;
+  --border:rgba(14,165,233,0.15);--border2:rgba(14,165,233,0.3);
+  --star-on:#0ea5e9;--star-off:#bae6fd;
+  --badge-bg:#e0f2fe;--sidebar-hl:#e0f2fe;
+  --btn-bg:#0ea5e9;--btn-text:#fff;
+}
+.level-gold{
+  --accent:#d97706;--accent-soft:#fef3c7;
+  --bg:#fffbeb;--bg2:#fff;--bg3:#fef3c7;
+  --text:#78350f;--text2:#92400e;
+  --border:rgba(217,119,6,0.15);--border2:rgba(217,119,6,0.3);
+  --star-on:#d97706;--star-off:#fde68a;
+  --badge-bg:#fef3c7;--sidebar-hl:#fef3c7;
+  --btn-bg:#d97706;--btn-text:#fff;
+}
+.level-black{
+  --accent:#e5e7eb;--accent-soft:#374151;
+  --bg:#030712;--bg2:#111827;--bg3:#1f2937;
+  --text:#f9fafb;--text2:#9ca3af;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --star-on:#e5e7eb;--star-off:#374151;
+  --badge-bg:#1f2937;--sidebar-hl:#1f2937;
+  --btn-bg:#e5e7eb;--btn-text:#111;
+}
+
+html,body{height:100%;font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);transition:background var(--transition),color var(--transition);}
+
+/* ---- AUTH SCREENS ---- */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:1rem;}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;width:100%;max-width:400px;transition:background var(--transition);}
+.auth-logo{font-size:22px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;margin-bottom:4px;}
+.auth-logo span{font-weight:300;color:var(--text2);}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:2rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500;}
+.field input,.field select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field select option{background:#fff;color:#111;}
+.btn-primary{width:100%;padding:11px;background:var(--btn-bg);color:var(--btn-text);font-family:'Sora',sans-serif;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s;}
+.btn-primary:hover{opacity:.85;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.auth-switch{text-align:center;font-size:12px;color:var(--text2);margin-top:1rem;}
+.auth-switch a{color:var(--accent);cursor:pointer;font-weight:500;}
+.auth-error{background:#fee2e2;color:#991b1b;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:1rem;}
+.auth-success{background:#dcfce7;color:#166534;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:1rem;}
+.fields-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ---- APP LAYOUT ---- */
+.app{display:flex;height:100vh;overflow:hidden;transition:background var(--transition);}
+.sidebar{width:230px;min-width:230px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:background var(--transition);}
+.logo-area{padding:1.4rem 1.25rem 1rem;border-bottom:1px solid var(--border);}
+.logo{font-size:17px;font-weight:700;color:var(--accent);letter-spacing:-0.3px;}
+.logo span{font-weight:300;color:var(--text2);}
+.nav{padding:.75rem 0;flex:1;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:var(--sidebar-hl);}
+.nav-item.active{color:var(--accent);background:var(--sidebar-hl);border-left-color:var(--accent);font-weight:500;}
+.nav-icon{font-size:14px;width:18px;text-align:center;}
+.nav-divider{height:1px;background:var(--border);margin:.5rem 1.25rem;}
+
+.level-widget{margin:.75rem 1rem 1rem;padding:.875rem;background:var(--badge-bg);border-radius:10px;border:1px solid var(--border);}
+.lw-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.lw-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;}
+.lw-name{font-size:15px;font-weight:700;color:var(--accent);}
+.lw-stars{display:flex;gap:4px;margin-bottom:6px;}
+.lw-star{font-size:16px;transition:color var(--transition);}
+.lw-star.on{color:var(--star-on);}
+.lw-star.off{color:var(--star-off);}
+.lw-progress{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.lw-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1),background var(--transition);}
+
+/* ---- MAIN ---- */
+.main{flex:1;padding:1.75rem 2rem;overflow-y:auto;background:var(--bg);transition:background var(--transition);}
+.page{display:none;animation:fadeIn .35s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-header{margin-bottom:1.5rem;}
+.page-title{font-size:20px;font-weight:600;color:var(--text);}
+.page-sub{font-size:13px;color:var(--text2);margin-top:3px;}
+
+/* ---- CARDS ---- */
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.25rem;}
+.metrics-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:1.25rem;}
+.mcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.875rem 1rem;transition:background var(--transition);}
+.mcard-label{font-size:11px;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.mcard-val{font-size:21px;font-weight:600;color:var(--text);}
+.mcard-change{font-size:11px;color:#16a34a;margin-top:2px;}
+
+.section-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;transition:background var(--transition);}
+.section-card:last-child{margin-bottom:0;}
+.sc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:1rem;}
+.sc-sub{font-size:12px;color:var(--text2);margin-top:-10px;margin-bottom:1rem;}
+
+.two-col{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px;margin-bottom:1.25rem;}
+
+/* ---- TABLE ---- */
+.ctable{width:100%;border-collapse:collapse;font-size:13px;}
+.ctable th{font-size:11px;color:var(--text2);text-align:left;padding:0 0 10px;border-bottom:1px solid var(--border);font-weight:500;}
+.ctable td{padding:9px 0;border-bottom:1px solid var(--border);color:var(--text);}
+.ctable tr:last-child td{border-bottom:none;}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;}
+.pill-green{background:#dcfce7;color:#166534;}
+.pill-amber{background:#fef3c7;color:#92400e;}
+.pill-red{background:#fee2e2;color:#991b1b;}
+.pill-gray{background:#f3f4f6;color:#374151;}
+
+/* ---- RANKING ---- */
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.rank-item:last-child{border-bottom:none;}
+.rank-pos{width:20px;font-size:12px;font-weight:600;color:var(--text2);text-align:center;}
+.rank-pos.top{color:var(--accent);}
+.rank-avatar{width:30px;height:30px;border-radius:50%;background:var(--badge-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--border);}
+.rank-info{flex:1;}
+.rank-name{font-size:13px;color:var(--text);font-weight:500;}
+.rank-level{font-size:11px;color:var(--text2);}
+.rank-val{font-size:13px;font-weight:600;color:var(--accent);}
+
+/* ---- LINKS ---- */
+.link-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.link-url{flex:1;font-size:12px;color:var(--text2);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.copy-btn{font-size:11px;padding:4px 12px;border-radius:6px;background:var(--badge-bg);color:var(--accent);border:1px solid var(--border2);cursor:pointer;font-family:'Sora',sans-serif;transition:all .2s;white-space:nowrap;font-weight:500;}
+.copy-btn:hover{background:var(--accent);color:var(--btn-text);}
+
+/* ---- MATERIALS ---- */
+.mat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.mat-card{background:var(--bg3);border-radius:10px;padding:1rem;border:1px solid var(--border);cursor:pointer;transition:all .2s;}
+.mat-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.mat-icon{font-size:20px;margin-bottom:5px;}
+.mat-name{font-size:13px;font-weight:500;color:var(--text);}
+.mat-desc{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* ---- CAREER ---- */
+.career-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.25rem;}
+.cc{border-radius:12px;padding:1.25rem;border:2px solid transparent;position:relative;transition:transform .2s;}
+.cc:hover{transform:translateY(-2px);}
+.cc.white{background:#f9fafb;border-color:#e5e7eb;}
+.cc.blue{background:#f0f9ff;border-color:#bae6fd;}
+.cc.gold{background:#fffbeb;border-color:#fde68a;}
+.cc.black{background:#111827;border-color:#374151;}
+.cc-badge{position:absolute;top:10px;right:10px;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;display:none;}
+.cc.white .cc-badge{background:#e5e7eb;color:#111;}
+.cc.blue .cc-badge{background:#bae6fd;color:#0c4a6e;}
+.cc.gold .cc-badge{background:#fde68a;color:#78350f;}
+.cc.black .cc-badge{background:#374151;color:#f9fafb;}
+.cc-lv{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.cc.white .cc-lv{color:#374151;} .cc.blue .cc-lv{color:#0369a1;} .cc.gold .cc-lv{color:#92400e;} .cc.black .cc-lv{color:#9ca3af;}
+.cc-pct{font-size:28px;font-weight:700;}
+.cc.white .cc-pct{color:#111;} .cc.blue .cc-pct{color:#0ea5e9;} .cc.gold .cc-pct{color:#d97706;} .cc.black .cc-pct{color:#e5e7eb;}
+.cc-label{font-size:11px;margin-bottom:10px;}
+.cc.white .cc-label{color:#6b7280;} .cc.blue .cc-label{color:#0369a1;} .cc.gold .cc-label{color:#92400e;} .cc.black .cc-label{color:#6b7280;}
+.cc-stars{display:flex;gap:3px;}
+.cc-star{font-size:13px;}
+.cc.white .cc-star{color:#d1d5db;} .cc.blue .cc-star{color:#bae6fd;} .cc.gold .cc-star{color:#fde68a;} .cc.black .cc-star{color:#374151;}
+.cc-reqs{font-size:11px;margin-top:8px;}
+.cc.white .cc-reqs{color:#6b7280;} .cc.blue .cc-reqs{color:#0369a1;} .cc.gold .cc-reqs{color:#92400e;} .cc.black .cc-reqs{color:#6b7280;}
+
+/* ---- SETTINGS ---- */
+.settings-tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.stab{font-size:13px;color:var(--text2);padding:.6rem 1rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.stab:hover{color:var(--text);}
+.stab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500;}
+.stab-panel{display:none;}
+.stab-panel.active{display:block;}
+.save-btn{padding:9px 20px;background:var(--btn-bg);color:var(--btn-text);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s;margin-top:.5rem;}
+.save-btn:hover{opacity:.85;}
+.save-btn:disabled{opacity:.5;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-full{grid-column:1/-1;}
+.info-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.875rem 1rem;font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6;}
+
+/* ---- PROGRESS PAGE ---- */
+.prog-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.prog-title{font-size:14px;font-weight:500;color:var(--text);}
+.prog-info-txt{font-size:12px;color:var(--text2);}
+.big-stars{display:flex;gap:8px;margin-bottom:10px;}
+.big-star{font-size:28px;transition:color var(--transition),transform .3s;}
+.big-star.on{color:var(--star-on);transform:scale(1.08);}
+.big-star.off{color:var(--star-off);}
+.prog-bar-bg{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.prog-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1),background var(--transition);}
+.prog-foot{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:6px;}
+
+/* ---- LOADER ---- */
+.loader{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);}
+.loader-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin:0 4px;animation:bounce .6s infinite alternate;}
+.loader-dot:nth-child(2){animation-delay:.2s;}
+.loader-dot:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+
+.hidden{display:none!important;}
+.msg-box{font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:1rem;}
+.msg-error{background:#fee2e2;color:#991b1b;}
+.msg-success{background:#dcfce7;color:#166534;}
+
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .metrics,.metrics-3{grid-template-columns:repeat(2,1fr);}
+  .career-grid{grid-template-columns:repeat(2,1fr);}
+  .two-col,.form-grid{grid-template-columns:1fr;}
+  .main{padding:1.25rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+  <div class="loader-dot"></div>
+  <div class="loader-dot"></div>
+  <div class="loader-dot"></div>
+</div>
+
+<!-- AUTH -->
+<div class="auth-wrap hidden" id="auth-screen">
+  <!-- LOGIN -->
+  <div id="login-form">
+    <div class="auth-card">
+      <div class="auth-logo">Lumi <span>Alliance</span></div>
+      <div class="auth-sub">Acesse sua conta de afiliado</div>
+      <div id="login-error" class="auth-error hidden"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">Entrar</button>
+      <div class="auth-switch">Não tem conta? <a onclick="showRegister()">Cadastre-se aqui</a></div>
+    </div>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="register-form" class="hidden">
+    <div class="auth-card">
+      <div class="auth-logo">Lumi <span>Alliance</span></div>
+      <div class="auth-sub">Crie sua conta de afiliado</div>
+      <div id="reg-error" class="auth-error hidden"></div>
+      <div id="reg-success" class="auth-success hidden"></div>
+      <div class="fields-row">
+        <div class="field"><label>Nome completo</label><input type="text" id="reg-name" placeholder="João Silva"></div>
+        <div class="field"><label>Telefone</label><input type="tel" id="reg-phone" placeholder="(11) 99999-9999"></div>
+      </div>
+      <div class="field"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com"></div>
+      <div class="fields-row">
+        <div class="field"><label>Senha</label><input type="password" id="reg-pass" placeholder="Mín. 6 caracteres"></div>
+        <div class="field"><label>Confirmar senha</label><input type="password" id="reg-pass2" placeholder="Repita a senha"></div>
+      </div>
+      <button class="btn-primary" id="reg-btn" onclick="doRegister()">Criar conta</button>
+      <div class="auth-switch">Já tem conta? <a onclick="showLogin()">Entrar aqui</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app hidden level-white" id="app-screen">
+  <div class="sidebar">
+    <div class="logo-area">
+      <div class="logo">Lumi <span>Alliance</span></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</div>
+      <div class="nav-item" data-page="links" onclick="showPage('links',this)"><span class="nav-icon">⊞</span> Links & Materiais</div>
+      <div class="nav-item" data-page="comissoes" onclick="showPage('comissoes',this)"><span class="nav-icon">◎</span> Comissões</div>
+      <div class="nav-item" data-page="ranking" onclick="showPage('ranking',this)"><span class="nav-icon">◆</span> Ranking</div>
+      <div class="nav-item" data-page="carreira" onclick="showPage('carreira',this)"><span class="nav-icon">◉</span> Plano de Carreira</div>
+      <div class="nav-divider"></div>
+      <div class="nav-item" data-page="settings" onclick="showPage('settings',this)"><span class="nav-icon">⚙</span> Configurações</div>
+      <div class="nav-item" onclick="doLogout()" style="color:#ef4444"><span class="nav-icon">←</span> Sair</div>
+    </nav>
+    <div class="level-widget">
+      <div class="lw-row">
+        <span class="lw-label">Seu nível</span>
+        <span class="lw-name" id="lw-name">White</span>
+      </div>
+      <div class="lw-stars" id="lw-stars"></div>
+      <div class="lw-progress"><div class="lw-fill" id="lw-fill" style="width:0%"></div></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;" id="lw-info">0 vendas</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dash-welcome">Bem-vindo de volta</div>
+      </div>
+      <div class="metrics">
+        <div class="mcard"><div class="mcard-label">Comissões totais</div><div class="mcard-val" id="d-total-comm">R$ 0</div></div>
+        <div class="mcard"><div class="mcard-label">Vendas realizadas</div><div class="mcard-val" id="d-total-sales">0</div></div>
+        <div class="mcard"><div class="mcard-label">Aguardando saque</div><div class="mcard-val" id="d-pending">R$ 0</div></div>
+        <div class="mcard"><div class="mcard-label">Comissão atual</div><div class="mcard-val" id="d-pct">20%</div></div>
+      </div>
+      <div class="prog-section">
+        <div class="prog-header">
+          <div class="prog-title" id="prog-title">Progresso para Blue</div>
+          <div class="prog-info-txt" id="prog-info">0 de 5 estrelas</div>
+        </div>
+        <div class="big-stars" id="big-stars"></div>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+        <div class="prog-foot">
+          <span id="prog-msg">Faça sua primeira venda para ganhar uma estrela</span>
+          <span id="prog-comm">White → 20% comissão</span>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="section-card">
+          <div class="sc-title">Últimas vendas</div>
+          <table class="ctable">
+            <thead><tr><th>Cliente</th><th>Plano</th><th>Comissão</th><th>Status</th></tr></thead>
+            <tbody id="recent-sales"><tr><td colspan="4" style="color:var(--text2);text-align:center;padding:1rem 0">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="section-card">
+          <div class="sc-title">Top afiliados</div>
+          <div id="mini-ranking"><div style="color:var(--text2);font-size:13px">Carregando...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINKS -->
+    <div class="page hidden" id="page-links">
+      <div class="page-header">
+        <div class="page-title">Links & Materiais</div>
+        <div class="page-sub">Seus links de divulgação e materiais prontos para usar</div>
+      </div>
+      <div class="section-card">
+        <div class="sc-title">Seus links de afiliado</div>
+        <div id="aff-links"><div style="color:var(--text2);font-size:13px">Carregando links...</div></div>
+      </div>
+      <div class="section-card">
+        <div class="sc-title">Materiais de divulgação</div>
+        <div class="mat-grid">
+          <div class="mat-card"><div class="mat-icon">🖼️</div><div class="mat-name">Criativos Instagram</div><div class="mat-desc">10 artes — Stories e Feed</div></div>
+          <div class="mat-card"><div class="mat-icon">📹</div><div class="mat-name">Vídeos para Reels</div><div class="mat-desc">5 vídeos editáveis em Canva</div></div>
+          <div class="mat-card"><div class="mat-icon">✉️</div><div class="mat-name">Scripts WhatsApp</div><div class="mat-desc">Mensagens prontas para enviar</div></div>
+          <div class="mat-card"><div class="mat-icon">📄</div><div class="mat-name">Copy de vendas</div><div class="mat-desc">Textos prontos para copiar</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMISSÕES -->
+    <div class="page hidden" id="page-comissoes">
+      <div class="page-header">
+        <div class="page-title">Comissões</div>
+        <div class="page-sub">Histórico de todas as suas comissões</div>
+      </div>
+      <div class="metrics-3">
+        <div class="mcard"><div class="mcard-label">Total acumulado</div><div class="mcard-val" id="c-total">R$ 0</div></div>
+        <div class="mcard"><div class="mcard-label">Disponível para saque</div><div class="mcard-val" id="c-avail">R$ 0</div></div>
+        <div class="mcard"><div class="mcard-label">Já pago</div><div class="mcard-val" id="c-paid">R$ 0</div></div>
+      </div>
+      <div class="section-card">
+        <div class="sc-title">Histórico de comissões</div>
+        <table class="ctable">
+          <thead><tr><th>Data</th><th>Venda</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody id="comm-table"><tr><td colspan="4" style="color:var(--text2);text-align:center;padding:1rem 0">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RANKING -->
+    <div class="page hidden" id="page-ranking">
+      <div class="page-header">
+        <div class="page-title">Ranking</div>
+        <div class="page-sub">Os melhores afiliados da Lumi Alliance</div>
+      </div>
+      <div class="section-card">
+        <div id="full-ranking"><div style="color:var(--text2);font-size:13px">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- CARREIRA -->
+    <div class="page hidden" id="page-carreira">
+      <div class="page-header">
+        <div class="page-title">Plano de Carreira</div>
+        <div class="page-sub">Evolua de nível e ganhe comissões maiores</div>
+      </div>
+      <div class="career-grid">
+        <div class="cc white"><div class="cc-badge" id="cb-white">Atual</div><div class="cc-lv">White</div><div class="cc-pct">20%</div><div class="cc-label">comissão por venda</div><div class="cc-stars" id="cs-white"></div><div class="cc-reqs">1 venda = 1 estrela</div></div>
+        <div class="cc blue"><div class="cc-badge" id="cb-blue">Atual</div><div class="cc-lv">Blue</div><div class="cc-pct">25%</div><div class="cc-label">comissão por venda</div><div class="cc-stars" id="cs-blue"></div><div class="cc-reqs">15 vendas = 1 estrela</div></div>
+        <div class="cc gold"><div class="cc-badge" id="cb-gold">Atual</div><div class="cc-lv">Gold</div><div class="cc-pct">30%</div><div class="cc-label">comissão por venda</div><div class="cc-stars" id="cs-gold"></div><div class="cc-reqs">20 vendas = 1 estrela</div></div>
+        <div class="cc black"><div class="cc-badge" id="cb-black">Atual</div><div class="cc-lv">Black</div><div class="cc-pct">40%</div><div class="cc-label">comissão por venda</div><div class="cc-stars" id="cs-black"></div><div class="cc-reqs">20 vendas = 1 estrela</div></div>
+      </div>
+      <div class="section-card">
+        <div class="sc-title">Como funciona</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.9;">
+          Cada nível tem <strong style="color:var(--accent)">5 estrelas</strong>. Ao completar as 5 estrelas você avança automaticamente — e a plataforma muda de visual para celebrar.<br><br>
+          <strong style="color:var(--text)">White → Blue:</strong> 5 vendas totais (1 venda = 1 estrela)<br>
+          <strong style="color:var(--text)">Blue → Gold:</strong> 75 vendas a mais (15 vendas = 1 estrela)<br>
+          <strong style="color:var(--text)">Gold → Black:</strong> 100 vendas a mais (20 vendas = 1 estrela)
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page hidden" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">Configurações</div>
+        <div class="page-sub">Gerencie seu perfil, dados fiscais e conta bancária</div>
+      </div>
+      <div class="settings-tabs">
+        <div class="stab active" onclick="showStab('perfil',this)">Perfil</div>
+        <div class="stab" onclick="showStab('fiscal',this)">Dados Fiscais</div>
+        <div class="stab" onclick="showStab('banco',this)">Conta Bancária</div>
+      </div>
+
+      <!-- PERFIL -->
+      <div class="stab-panel active" id="stab-perfil">
+        <div class="section-card">
+          <div class="sc-title">Informações pessoais</div>
+          <div id="perf-msg" class="msg-box hidden"></div>
+          <div class="form-grid">
+            <div class="field"><label>Nome completo</label><input type="text" id="p-name" placeholder="Seu nome"></div>
+            <div class="field"><label>Telefone</label><input type="tel" id="p-phone" placeholder="(11) 99999-9999"></div>
+            <div class="field form-full"><label>E-mail</label><input type="email" id="p-email" placeholder="seu@email.com" disabled style="opacity:.6"></div>
+          </div>
+          <button class="save-btn" onclick="saveProfile()">Salvar perfil</button>
+        </div>
+        <div class="section-card">
+          <div class="sc-title">Alterar senha</div>
+          <div id="pass-msg" class="msg-box hidden"></div>
+          <div class="form-grid">
+            <div class="field"><label>Nova senha</label><input type="password" id="p-newpass" placeholder="Mín. 6 caracteres"></div>
+            <div class="field"><label>Confirmar nova senha</label><input type="password" id="p-newpass2" placeholder="Repita a senha"></div>
+          </div>
+          <button class="save-btn" onclick="savePassword()">Alterar senha</button>
+        </div>
+      </div>
+
+      <!-- FISCAL -->
+      <div class="stab-panel hidden" id="stab-fiscal">
+        <div class="section-card">
+          <div class="sc-title">Dados para emissão de nota fiscal</div>
+          <div class="info-box">Necessário para receber comissões acima de R$ 500. Preencha com seus dados de pessoa física (CPF) ou jurídica (CNPJ).</div>
+          <div id="fiscal-msg" class="msg-box hidden"></div>
+          <div class="form-grid">
+            <div class="field"><label>Tipo de documento</label>
+              <select id="f-type" onchange="toggleCNPJ()">
+                <option value="cpf">Pessoa Física (CPF)</option>
+                <option value="cnpj">Pessoa Jurídica (CNPJ)</option>
+              </select>
+            </div>
+            <div class="field"><label id="f-doc-label">CPF</label><input type="text" id="f-doc" placeholder="000.000.000-00"></div>
+            <div class="field form-full hidden" id="f-company-wrap"><label>Razão social</label><input type="text" id="f-company" placeholder="Nome da empresa"></div>
+            <div class="field"><label>CEP</label><input type="text" id="f-zip" placeholder="00000-000"></div>
+            <div class="field"><label>Cidade</label><input type="text" id="f-city" placeholder="São Paulo"></div>
+            <div class="field"><label>Estado</label><input type="text" id="f-state" placeholder="SP"></div>
+            <div class="field form-full"><label>Endereço completo</label><input type="text" id="f-address" placeholder="Rua, número, bairro"></div>
+          </div>
+          <button class="save-btn" onclick="saveFiscal()">Salvar dados fiscais</button>
+        </div>
+      </div>
+
+      <!-- BANCO -->
+      <div class="stab-panel hidden" id="stab-banco">
+        <div class="section-card">
+          <div class="sc-title">Conta para receber comissões</div>
+          <div class="info-box">Seus saques serão transferidos para esta conta. Use preferencialmente PIX para recebimento mais rápido.</div>
+          <div id="bank-msg" class="msg-box hidden"></div>
+          <div class="form-grid">
+            <div class="field"><label>Tipo de recebimento</label>
+              <select id="b-type" onchange="toggleBankFields()">
+                <option value="pix">PIX</option>
+                <option value="corrente">Conta Corrente</option>
+                <option value="poupanca">Conta Poupança</option>
+              </select>
+            </div>
+            <div class="field"><label>Nome do titular</label><input type="text" id="b-holder" placeholder="Nome completo"></div>
+            <div class="field form-full" id="b-pix-wrap"><label>Chave PIX</label><input type="text" id="b-pix" placeholder="CPF, e-mail, telefone ou chave aleatória"></div>
+            <div id="b-bank-wrap" class="form-full hidden" style="display:contents">
+              <div class="field"><label>Banco</label><input type="text" id="b-bank" placeholder="Ex: Nubank, Itaú..."></div>
+              <div class="field"><label>Código do banco</label><input type="text" id="b-code" placeholder="260"></div>
+              <div class="field"><label>Agência</label><input type="text" id="b-agency" placeholder="0001"></div>
+              <div class="field"><label>Número da conta</label><input type="text" id="b-account" placeholder="00000000-0"></div>
+            </div>
+          </div>
+          <button class="save-btn" onclick="saveBankAccount()">Salvar conta bancária</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---- SUPABASE INIT ----
+const { createClient } = supabase;
+const sb = createClient(
+  'https://utczzurxnaaqccbxsqyh.supabase.co',
+  'sb_publishable_897pPuNE6hnLRb8LVyHifw_zmXUcDga'
+);
+
+let currentUser = null;
+let affiliateData = null;
+let levelData = null;
+
+const LEVELS = {
+  white: { name:'White', commission:20, color:'level-white' },
+  blue:  { name:'Blue',  commission:25, color:'level-blue' },
+  gold:  { name:'Gold',  commission:30, color:'level-gold' },
+  black: { name:'Black', commission:40, color:'level-black' },
+};
+
+// ---- INIT ----
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadApp();
+  } else {
+    showAuthScreen();
+  }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      await loadApp();
+    } else if (event === 'SIGNED_OUT') {
+      showAuthScreen();
+    }
+  });
+}
+
+function showAuthScreen() {
+  document.getElementById('loader').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('app-screen').classList.add('hidden');
+}
+
+async function loadApp() {
+  document.getElementById('loader').classList.remove('hidden');
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.add('hidden');
+
+  try {
+    // Load affiliate profile
+    const { data: aff } = await sb.from('affiliates').select('*').eq('id', currentUser.id).single();
+    affiliateData = aff;
+
+    // Load level
+    const { data: lvl } = await sb.from('affiliate_levels').select('*').eq('affiliate_id', currentUser.id).single();
+    levelData = lvl;
+
+    applyLevel(lvl?.current_level || 'white');
+    renderSidebarLevel(lvl);
+    updateDashboard(aff, lvl);
+    loadRecentSales();
+    loadMiniRanking();
+    loadAffiliateLinks();
+    loadCommissions();
+    loadFullRanking();
+    renderCareerStars();
+    prefillSettings(aff);
+
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+  } catch(e) {
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+  }
+}
+
+// ---- LEVEL SYSTEM ----
+function applyLevel(level) {
+  const app = document.getElementById('app-screen');
+  app.className = 'app ' + (LEVELS[level]?.color || 'level-white');
+  // Update career badges
+  ['white','blue','gold','black'].forEach(l => {
+    const b = document.getElementById('cb-'+l);
+    if(b) b.style.display = (l === level) ? 'block' : 'none';
+  });
+  document.getElementById('d-pct').textContent = (LEVELS[level]?.commission || 20) + '%';
+  document.getElementById('prog-comm').textContent = LEVELS[level]?.name + ' → ' + (LEVELS[level]?.commission||20) + '% comissão';
+}
+
+function renderSidebarLevel(lvl) {
+  if (!lvl) return;
+  const level = lvl.current_level || 'white';
+  const stars = lvl.stars_current || 0;
+  const totalSales = lvl.total_sales || 0;
+
+  document.getElementById('lw-name').textContent = LEVELS[level]?.name || 'White';
+
+  // Stars
+  const starsEl = document.getElementById('lw-stars');
+  starsEl.innerHTML = '';
+  for(let i=0;i<5;i++){
+    const s = document.createElement('span');
+    s.className = 'lw-star ' + (i < stars ? 'on' : 'off');
+    s.textContent = '★';
+    starsEl.appendChild(s);
+  }
+
+  // Progress bar
+  document.getElementById('lw-fill').style.width = (stars/5*100) + '%';
+
+  // Info text
+  const nextMap = {white:'Blue',blue:'Gold',gold:'Black',black:null};
+  const next = nextMap[level];
+  document.getElementById('lw-info').textContent = next
+    ? `${stars}/5 estrelas → ${next}`
+    : '🏆 Nível máximo!';
+
+  // Big stars on dashboard
+  const bigEl = document.getElementById('big-stars');
+  if(bigEl){
+    bigEl.innerHTML = '';
+    for(let i=0;i<5;i++){
+      const s = document.createElement('span');
+      s.className = 'big-star ' + (i < stars ? 'on' : 'off');
+      s.textContent = '★';
+      bigEl.appendChild(s);
+    }
+  }
+
+  // Progress section
+  const progFill = document.getElementById('prog-fill');
+  if(progFill) progFill.style.width = (stars/5*100) + '%';
+  const progTitle = document.getElementById('prog-title');
+  if(progTitle) progTitle.textContent = next ? `Progresso para ${next}` : 'Nível máximo atingido! 🏆';
+  const progInfo = document.getElementById('prog-info');
+  if(progInfo) progInfo.textContent = `${stars} de 5 estrelas`;
+  const progMsg = document.getElementById('prog-msg');
+  if(progMsg) {
+    const left = 5 - stars;
+    progMsg.textContent = next
+      ? `Faltam ${left} estrela(s) para ${next}`
+      : 'Você chegou ao topo da Lumi Alliance!';
+  }
+}
+
+function updateDashboard(aff, lvl) {
+  if(aff) document.getElementById('dash-welcome').textContent = `Bem-vindo de volta, ${aff.full_name || 'Afiliado'}`;
+  if(lvl) {
+    document.getElementById('d-total-sales').textContent = lvl.total_sales || 0;
+  }
+}
+
+// ---- LOAD DATA ----
+async function loadRecentSales() {
+  const { data } = await sb.from('sales')
+    .select('*')
+    .eq('affiliate_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  const tbody = document.getElementById('recent-sales');
+  if(!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text2);text-align:center;padding:1.5rem 0;font-size:13px">Nenhuma venda ainda. Compartilhe seu link!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td>${s.customer_name}</td>
+      <td style="color:var(--text2)">${s.plan}</td>
+      <td style="color:var(--accent);font-weight:600">R$ ${s.commission_amount.toFixed(2)}</td>
+      <td>${statusPill(s.status)}</td>
+    </tr>`).join('');
+
+  // Total commission for dashboard
+  const { data: totals } = await sb.from('commissions')
+    .select('amount, status')
+    .eq('affiliate_id', currentUser.id);
+  if(totals) {
+    const total = totals.reduce((a,c) => a + parseFloat(c.amount), 0);
+    const pending = totals.filter(c => c.status === 'available').reduce((a,c) => a + parseFloat(c.amount), 0);
+    document.getElementById('d-total-comm').textContent = 'R$ ' + total.toFixed(2);
+    document.getElementById('d-pending').textContent = 'R$ ' + pending.toFixed(2);
+  }
+}
+
+async function loadCommissions() {
+  const { data } = await sb.from('commissions')
+    .select('*, sales(customer_name, plan)')
+    .eq('affiliate_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if(!data) return;
+  const total = data.reduce((a,c) => a + parseFloat(c.amount), 0);
+  const avail = data.filter(c => c.status==='available').reduce((a,c) => a + parseFloat(c.amount), 0);
+  const paid  = data.filter(c => c.status==='paid').reduce((a,c) => a + parseFloat(c.amount), 0);
+  document.getElementById('c-total').textContent = 'R$ ' + total.toFixed(2);
+  document.getElementById('c-avail').textContent = 'R$ ' + avail.toFixed(2);
+  document.getElementById('c-paid').textContent  = 'R$ ' + paid.toFixed(2);
+
+  const tbody = document.getElementById('comm-table');
+  if(data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text2);text-align:center;padding:1.5rem 0;font-size:13px">Nenhuma comissão ainda</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td style="color:var(--text2)">${new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
+      <td>${c.sales?.customer_name || '—'} · ${c.sales?.plan || '—'}</td>
+      <td style="color:var(--accent);font-weight:600">R$ ${parseFloat(c.amount).toFixed(2)}</td>
+      <td>${commPill(c.status)}</td>
+    </tr>`).join('');
+}
+
+async function loadMiniRanking() {
+  const { data } = await sb.from('affiliate_levels')
+    .select('affiliate_id, current_level, total_sales, affiliates(full_name)')
+    .order('total_sales', { ascending: false })
+    .limit(5);
+
+  const el = document.getElementById('mini-ranking');
+  if(!data || data.length === 0) {
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px">Nenhum afiliado ainda</div>';
+    return;
+  }
+  el.innerHTML = data.map((r,i) => {
+    const name = r.affiliates?.full_name || 'Afiliado';
+    const initials = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="rank-item">
+      <div class="rank-pos ${i<3?'top':''}">${i+1}</div>
+      <div class="rank-avatar">${initials}</div>
+      <div class="rank-info"><div class="rank-name">${name}</div><div class="rank-level">${LEVELS[r.current_level]?.name||'White'}</div></div>
+      <div class="rank-val">${r.total_sales} vendas</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadFullRanking() {
+  const { data } = await sb.from('affiliate_levels')
+    .select('affiliate_id, current_level, total_sales, affiliates(full_name)')
+    .order('total_sales', { ascending: false })
+    .limit(20);
+
+  const el = document.getElementById('full-ranking');
+  if(!data || data.length === 0) {
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:1rem">Nenhum afiliado ainda</div>';
+    return;
+  }
+  el.innerHTML = data.map((r,i) => {
+    const name = r.affiliates?.full_name || 'Afiliado';
+    const initials = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="rank-item">
+      <div class="rank-pos ${i<3?'top':''}">${i+1}</div>
+      <div class="rank-avatar">${initials}</div>
+      <div class="rank-info"><div class="rank-name">${name}</div><div class="rank-level">${LEVELS[r.current_level]?.name||'White'}</div></div>
+      <div class="rank-val">${r.total_sales} vendas</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAffiliateLinks() {
+  const { data: aff } = await sb.from('affiliates').select('*').eq('id', currentUser.id).single();
+  const slug = aff?.email?.split('@')[0] || currentUser.id.substring(0,8);
+  const links = [
+    { label: 'Link principal', url: `https://uselumiai.com.br/?ref=${slug}` },
+    { label: 'Lumi Day (R$37)', url: `https://uselumiai.com.br/lumi-day/?ref=${slug}` },
+    { label: 'Plano Pro', url: `https://uselumiai.com.br/pro/?ref=${slug}` },
+  ];
+  document.getElementById('aff-links').innerHTML = links.map(l => `
+    <div style="margin-bottom:4px;font-size:11px;color:var(--text2);font-weight:500">${l.label}</div>
+    <div class="link-box">
+      <span class="link-url">${l.url}</span>
+      <button class="copy-btn" onclick="copyLink(this,'${l.url}')">Copiar</button>
+    </div>`).join('');
+}
+
+function renderCareerStars() {
+  ['white','blue','gold','black'].forEach(lk => {
+    const c = document.getElementById('cs-'+lk);
+    if(c) { c.innerHTML=''; for(let i=0;i<5;i++){const s=document.createElement('span');s.className='cc-star';s.textContent='★';c.appendChild(s);} }
+  });
+}
+
+// ---- AUTH ACTIONS ----
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error) { errEl.textContent = 'E-mail ou senha incorretos.'; errEl.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const pass2 = document.getElementById('reg-pass2').value;
+  const errEl = document.getElementById('reg-error');
+  const sucEl = document.getElementById('reg-success');
+  const btn   = document.getElementById('reg-btn');
+  errEl.classList.add('hidden'); sucEl.classList.add('hidden');
+  if(!name || !email || !pass) { errEl.textContent='Preencha todos os campos.'; errEl.classList.remove('hidden'); return; }
+  if(pass !== pass2) { errEl.textContent='As senhas não coincidem.'; errEl.classList.remove('hidden'); return; }
+  if(pass.length < 6) { errEl.textContent='Senha mínima de 6 caracteres.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled=true; btn.textContent='Criando conta...';
+  const { error } = await sb.auth.signUp({ email, password: pass, options:{ data:{ full_name:name, phone } } });
+  if(error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); }
+  else { sucEl.textContent='Conta criada! Verifique seu e-mail para confirmar.'; sucEl.classList.remove('hidden'); }
+  btn.disabled=false; btn.textContent='Criar conta';
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+// ---- SETTINGS ACTIONS ----
+async function saveProfile() {
+  const name = document.getElementById('p-name').value.trim();
+  const phone = document.getElementById('p-phone').value.trim();
+  const msgEl = document.getElementById('perf-msg');
+  const { error } = await sb.from('affiliates').update({ full_name:name, phone, updated_at:new Date() }).eq('id', currentUser.id);
+  showMsg(msgEl, error ? error.message : 'Perfil salvo com sucesso!', !!error);
+}
+
+async function savePassword() {
+  const p1 = document.getElementById('p-newpass').value;
+  const p2 = document.getElementById('p-newpass2').value;
+  const msgEl = document.getElementById('pass-msg');
+  if(p1 !== p2) { showMsg(msgEl, 'As senhas não coincidem.', true); return; }
+  if(p1.length < 6) { showMsg(msgEl, 'Senha mínima de 6 caracteres.', true); return; }
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  showMsg(msgEl, error ? error.message : 'Senha alterada com sucesso!', !!error);
+}
+
+async function saveFiscal() {
+  const msgEl = document.getElementById('fiscal-msg');
+  const payload = {
+    affiliate_id: currentUser.id,
+    document_type: document.getElementById('f-type').value,
+    document_number: document.getElementById('f-doc').value.trim(),
+    company_name: document.getElementById('f-company').value.trim(),
+    zip_code: document.getElementById('f-zip').value.trim(),
+    city: document.getElementById('f-city').value.trim(),
+    state: document.getElementById('f-state').value.trim(),
+    address: document.getElementById('f-address').value.trim(),
+    updated_at: new Date(),
+  };
+  const { error } = await sb.from('affiliate_fiscal').upsert(payload, { onConflict: 'affiliate_id' });
+  showMsg(msgEl, error ? error.message : 'Dados fiscais salvos!', !!error);
+}
+
+async function saveBankAccount() {
+  const msgEl = document.getElementById('bank-msg');
+  const type = document.getElementById('b-type').value;
+  const payload = {
+    affiliate_id: currentUser.id,
+    account_type: type,
+    account_holder: document.getElementById('b-holder').value.trim(),
+    pix_key: document.getElementById('b-pix').value.trim(),
+    bank_name: document.getElementById('b-bank').value.trim(),
+    bank_code: document.getElementById('b-code').value.trim(),
+    agency: document.getElementById('b-agency').value.trim(),
+    account_number: document.getElementById('b-account').value.trim(),
+    is_primary: true,
+  };
+  // Upsert primary account
+  const { data: existing } = await sb.from('affiliate_bank_accounts').select('id').eq('affiliate_id', currentUser.id).eq('is_primary', true).single();
+  let error;
+  if(existing) {
+    ({ error } = await sb.from('affiliate_bank_accounts').update(payload).eq('id', existing.id));
+  } else {
+    ({ error } = await sb.from('affiliate_bank_accounts').insert(payload));
+  }
+  showMsg(msgEl, error ? error.message : 'Conta bancária salva!', !!error);
+}
+
+async function prefillSettings(aff) {
+  if(!aff) return;
+  document.getElementById('p-name').value = aff.full_name || '';
+  document.getElementById('p-phone').value = aff.phone || '';
+  document.getElementById('p-email').value = aff.email || '';
+
+  const { data: fiscal } = await sb.from('affiliate_fiscal').select('*').eq('affiliate_id', currentUser.id).single();
+  if(fiscal) {
+    document.getElementById('f-type').value = fiscal.document_type || 'cpf';
+    document.getElementById('f-doc').value = fiscal.document_number || '';
+    document.getElementById('f-company').value = fiscal.company_name || '';
+    document.getElementById('f-zip').value = fiscal.zip_code || '';
+    document.getElementById('f-city').value = fiscal.city || '';
+    document.getElementById('f-state').value = fiscal.state || '';
+    document.getElementById('f-address').value = fiscal.address || '';
+    toggleCNPJ();
+  }
+  const { data: bank } = await sb.from('affiliate_bank_accounts').select('*').eq('affiliate_id', currentUser.id).eq('is_primary', true).single();
+  if(bank) {
+    document.getElementById('b-type').value = bank.account_type || 'pix';
+    document.getElementById('b-holder').value = bank.account_holder || '';
+    document.getElementById('b-pix').value = bank.pix_key || '';
+    document.getElementById('b-bank').value = bank.bank_name || '';
+    document.getElementById('b-code').value = bank.bank_code || '';
+    document.getElementById('b-agency').value = bank.agency || '';
+    document.getElementById('b-account').value = bank.account_number || '';
+    toggleBankFields();
+  }
+}
+
+// ---- UI HELPERS ----
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  if(pg){ pg.classList.remove('hidden'); pg.classList.add('active'); }
+  if(el) el.classList.add('active');
+  if(id === 'ranking') loadFullRanking();
+  if(id === 'comissoes') loadCommissions();
+}
+
+function showStab(id, el) {
+  document.querySelectorAll('.stab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(s=>s.classList.remove('active'));
+  document.getElementById('stab-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+}
+
+function toggleCNPJ() {
+  const isCNPJ = document.getElementById('f-type').value === 'cnpj';
+  document.getElementById('f-doc-label').textContent = isCNPJ ? 'CNPJ' : 'CPF';
+  document.getElementById('f-doc').placeholder = isCNPJ ? '00.000.000/0001-00' : '000.000.000-00';
+  document.getElementById('f-company-wrap').classList.toggle('hidden', !isCNPJ);
+}
+
+function toggleBankFields() {
+  const isPix = document.getElementById('b-type').value === 'pix';
+  document.getElementById('b-pix-wrap').classList.toggle('hidden', !isPix);
+  const bankWrap = document.getElementById('b-bank-wrap');
+  if(bankWrap) {
+    const kids = bankWrap.children;
+    for(let k of kids) k.classList.toggle('hidden', isPix);
+  }
+}
+
+function copyLink(btn, url) {
+  navigator.clipboard.writeText(url).then(()=>{
+    btn.textContent='Copiado ✓';
+    setTimeout(()=>btn.textContent='Copiar', 2000);
+  });
+}
+
+function showMsg(el, msg, isError) {
+  el.textContent = msg;
+  el.className = 'msg-box ' + (isError ? 'msg-error' : 'msg-success');
+  el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'), 4000);
+}
+
+function statusPill(s) {
+  const map = { confirmed:'pill-green', pending:'pill-amber', cancelled:'pill-red', refunded:'pill-gray' };
+  const labels = { confirmed:'Confirmado', pending:'Pendente', cancelled:'Cancelado', refunded:'Reembolsado' };
+  return `<span class="pill ${map[s]||'pill-gray'}">${labels[s]||s}</span>`;
+}
+function commPill(s) {
+  const map = { available:'pill-green', pending:'pill-amber', paid:'pill-gray', cancelled:'pill-red' };
+  const labels = { available:'Disponível', pending:'Pendente', paid:'Pago', cancelled:'Cancelado' };
+  return `<span class="pill ${map[s]||'pill-gray'}">${labels[s]||s}</span>`;
+}
+
+function showLogin() { document.getElementById('login-form').classList.remove('hidden'); document.getElementById('register-form').classList.add('hidden'); }
+function showRegister() { document.getElementById('register-form').classList.remove('hidden'); document.getElementById('login-form').classList.add('hidden'); }
+
+// Start
+init();
+</script>
+</body>
+</html>
